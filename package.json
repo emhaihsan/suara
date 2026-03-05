@@ -18,7 +18,8 @@
     "db:studio": "pnpm --filter @suara/db studio",
     "dev:auth": "pnpm --filter @suara/auth dev",
     "dev:voice": "pnpm --filter @suara/voice dev",
-    "dev:worker": "pnpm --filter @suara/worker dev"
+    "dev:worker": "pnpm --filter @suara/worker dev",
+    "dev:web": "pnpm --filter @suara/web dev"
   },
   "keywords": [
     "tts",
