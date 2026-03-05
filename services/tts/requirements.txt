@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pika
+minio
+kokoro-onnx
+onnxruntime
+python-dotenv
+soundfile
+numpy

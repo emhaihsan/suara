@@ -1,0 +1,54 @@
+http:
+  routers:
+    api:
+      rule: "PathPrefix(`/api`)"
+      service: api
+      entryPoints:
+        - web
+    auth:
+      rule: "PathPrefix(`/auth`)"
+      service: auth
+      entryPoints:
+        - web
+    api-keys:
+      rule: "PathPrefix(`/api-keys`)"
+      service: auth
+      entryPoints:
+        - web
+    voices:
+      rule: "PathPrefix(`/voices`)"
+      service: voice
+      entryPoints:
+        - web
+    library:
+      rule: "PathPrefix(`/library`)"
+      service: voice
+      entryPoints:
+        - web
+    worker:
+      rule: "PathPrefix(`/worker`)"
+      service: worker
+      entryPoints:
+        - web
+
+  services:
+    api:
+      loadBalancer:
+        servers:
+          - url: "http://api:3001"
+    auth:
+      loadBalancer:
+        servers:
+          - url: "http://auth:3002"
+    voice:
+      loadBalancer:
+        servers:
+          - url: "http://voice:3003"
+    tts:
+      loadBalancer:
+        servers:
+          - url: "http://tts:8000"
+    worker:
+      loadBalancer:
+        servers:
+          - url: "http://worker:3004"

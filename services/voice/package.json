@@ -1,0 +1,30 @@
+{
+    "name": "@suara/voice",
+    "version": "1.0.0",
+    "private": true,
+    "main": "dist/server.js",
+    "scripts": {
+        "dev": "tsx watch --env-file=../../.env src/server.ts",
+        "build": "tsc",
+        "start": "node dist/server.js",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "fastify": "^5.3.0",
+        "@fastify/cors": "^11.0.0",
+        "@fastify/jwt": "^9.0.0",
+        "fastify-plugin": "^5.0.0",
+        "zod": "^3.25.0",
+        "dotenv": "^16.5.0",
+        "drizzle-orm": "^0.44.0",
+        "@aws-sdk/client-s3": "^3.800.0",
+        "@aws-sdk/s3-request-presigner": "^3.800.0",
+        "@fastify/multipart": "^9.0.0",
+        "@suara/db": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^20.19.35",
+        "tsx": "^4.19.0",
+        "typescript": "^5.9.3"
+    }
+}

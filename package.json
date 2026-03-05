@@ -1,0 +1,36 @@
+{
+  "name": "suara",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Suara AI TTS Platform — pnpm monorepo",
+  "scripts": {
+    "lint": "pnpm -r lint",
+    "type-check": "pnpm -r type-check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "infra:ps": "docker compose ps",
+    "db:generate": "pnpm --filter @suara/db generate",
+    "db:migrate": "pnpm --filter @suara/db migrate",
+    "db:seed": "pnpm --filter @suara/db seed",
+    "db:studio": "pnpm --filter @suara/db studio",
+    "dev:auth": "pnpm --filter @suara/auth dev",
+    "dev:voice": "pnpm --filter @suara/voice dev"
+  },
+  "keywords": [
+    "tts",
+    "ai",
+    "kokoro",
+    "monorepo"
+  ],
+  "author": "Ihsan",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.1",
+  "devDependencies": {
+    "@types/node": "^20.19.35",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3"
+  }
+}
