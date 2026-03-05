@@ -94,6 +94,28 @@ services:
     networks:
       - suara-network
 
+  # ─── TTS Engine (Python + Kokoro) ──────────────────────────
+  tts:
+    build:
+      context: ./services/tts
+      dockerfile: Dockerfile
+    container_name: suara-tts
+    ports:
+      - "8000:8000"
+    volumes:
+      - tts_models:/app/models
+    environment:
+      TTS_LOG_LEVEL: info
+      TTS_DEFAULT_VOICE: af_heart
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - suara-network
+
   # ─── API Gateway ─────────────────────────────────────────────
   traefik:
     image: traefik:v3.1
@@ -116,3 +138,4 @@ volumes:
   redis_data:
   rabbitmq_data:
   minio_data:
+  tts_models:

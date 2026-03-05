@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { getDatabase, ttsJobs, audioFiles } from '@suara/db';
+import { getDatabase, ttsJobs, audioFiles, voices } from '@suara/db';
 import { uploadFile } from './storage.js';
+import { synthesizeToSpeech } from './tts-client.js';
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -10,43 +11,6 @@ export interface JobMessage {
     voiceId: string;
     text: string;
     outputFormat: string;
-}
-
-// ─── Mock TTS ─────────────────────────────────────────────────
-
-/**
- * Generate a minimal valid WAV file (1 second of silence).
- * This is a placeholder — will be replaced with actual TTS engine later.
- */
-function generateSilentWav(): Buffer {
-    const sampleRate = 44100;
-    const numChannels = 1;
-    const bitsPerSample = 16;
-    const numSamples = sampleRate; // 1 second
-    const dataSize = numSamples * numChannels * (bitsPerSample / 8);
-    const buffer = Buffer.alloc(44 + dataSize);
-
-    // RIFF header
-    buffer.write('RIFF', 0);
-    buffer.writeUInt32LE(36 + dataSize, 4);
-    buffer.write('WAVE', 8);
-
-    // fmt chunk
-    buffer.write('fmt ', 12);
-    buffer.writeUInt32LE(16, 16);
-    buffer.writeUInt16LE(1, 20); // PCM
-    buffer.writeUInt16LE(numChannels, 22);
-    buffer.writeUInt32LE(sampleRate, 24);
-    buffer.writeUInt32LE(sampleRate * numChannels * (bitsPerSample / 8), 28);
-    buffer.writeUInt16LE(numChannels * (bitsPerSample / 8), 32);
-    buffer.writeUInt16LE(bitsPerSample, 34);
-
-    // data chunk
-    buffer.write('data', 36);
-    buffer.writeUInt32LE(dataSize, 40);
-    // Remaining bytes are 0 (silence)
-
-    return buffer;
 }
 
 // ─── Processor ────────────────────────────────────────────────
@@ -61,10 +25,11 @@ function getDb() {
  * Lifecycle: pending → processing → completed (or failed)
  *
  * 1. Mark job as "processing"
- * 2. Generate audio (mock for now)
- * 3. Upload to MinIO
- * 4. Create audio_files record
- * 5. Mark job as "completed"
+ * 2. Look up voice metadata to get Kokoro voice ID
+ * 3. Call TTS service (Python FastAPI + Kokoro)
+ * 4. Upload audio to MinIO
+ * 5. Create audio_files record
+ * 6. Mark job as "completed"
  *
  * If error → mark as "failed"
  */
@@ -81,17 +46,27 @@ export async function processJob(message: Record<string, unknown>): Promise<void
         .where(eq(ttsJobs.id, jobId));
 
     try {
-        // Step 2: Generate audio (mock — 1 second silent WAV)
-        const audioBuffer = generateSilentWav();
+        // Step 2: Look up voice to get Kokoro voice ID from metadata
+        const voice = await db.query.voices.findFirst({
+            where: eq(voices.id, voiceId),
+        });
+        const kokoroVoiceId = (voice?.name as string) || 'af_heart';
 
-        // Step 3: Determine output format
-        const mimeType = outputFormat === 'wav' ? 'audio/wav' : 'audio/mpeg';
+        // Step 3: Call TTS service
+        const result = await synthesizeToSpeech({
+            text,
+            voiceId: kokoroVoiceId,
+            language: voice?.language || 'en-us',
+            outputFormat,
+        });
+
+        // Step 4: Upload to MinIO
+        const mimeType = result.contentType;
         const extension = outputFormat === 'wav' ? 'wav' : 'mp3';
         const fileName = `tts_${jobId.slice(0, 8)}.${extension}`;
         const storagePath = `tts/${voiceId}/${randomUUID()}/${fileName}`;
 
-        // Step 4: Upload to MinIO
-        await uploadFile(storagePath, audioBuffer, mimeType);
+        await uploadFile(storagePath, result.audioBuffer, mimeType);
 
         // Step 5: Create audio file record
         const [audioFile] = await db
@@ -100,7 +75,8 @@ export async function processJob(message: Record<string, unknown>): Promise<void
                 jobId,
                 fileName,
                 mimeType,
-                sizeBytes: audioBuffer.length,
+                sizeBytes: result.audioBuffer.length,
+                duration: result.durationMs,
                 storagePath,
             })
             .returning();
@@ -115,7 +91,7 @@ export async function processJob(message: Record<string, unknown>): Promise<void
             })
             .where(eq(ttsJobs.id, jobId));
 
-        console.log(`✅ Job ${jobId} completed`);
+        console.log(`✅ Job ${jobId} completed (${result.durationMs.toFixed(0)}ms audio)`);
     } catch (err) {
         // Mark as failed
         await db
