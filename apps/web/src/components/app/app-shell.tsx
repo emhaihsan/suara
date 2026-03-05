@@ -3,10 +3,19 @@
 import React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Library, Mic, Waves } from "lucide-react"
+import { LayoutDashboard, Library, Mic, Waves, LogOut, ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth"
 import { ThemeToggle } from "@/components/theme-toggle"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -16,6 +25,7 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    const { user, logout } = useAuth()
 
     return (
         <div className="flex min-h-screen bg-background">
@@ -54,9 +64,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </nav>
 
                 {/* Theme Toggle bottom */}
-                <div className="flex items-center justify-between border-t border-border/50 px-5 py-3">
+                <div className="mt-auto flex items-center justify-between border-t border-border/50 px-5 py-3">
                     <span className="text-xs text-muted-foreground">Appearance</span>
                     <ThemeToggle />
+                </div>
+
+                {/* User Menu */}
+                <div className="border-t border-border/50 p-3">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/10 overflow-hidden">
+                                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold uppercase text-primary-foreground">
+                                    {user?.name?.slice(0, 2) || "U"}
+                                </div>
+                                <div className="flex flex-1 flex-col overflow-hidden leading-tight">
+                                    <span className="truncate font-semibold text-[13px]">{user?.name}</span>
+                                    <span className="truncate text-[11px] text-muted-foreground">{user?.email}</span>
+                                </div>
+                                <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[200px]">
+                            <DropdownMenuLabel className="font-normal">
+                                <div className="flex flex-col space-y-1">
+                                    <p className="text-sm font-medium leading-none">{user?.name}</p>
+                                    <p className="text-xs leading-none text-muted-foreground">
+                                        {user?.email}
+                                    </p>
+                                </div>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
+                                <LogOut className="mr-2 size-4" />
+                                <span>Log out</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </aside>
 

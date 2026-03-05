@@ -1,3 +1,5 @@
+import { AuthProvider } from "@/lib/auth";
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -25,8 +27,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster position="bottom-right" theme="dark" />
+          <AuthProvider>
+            {children}
+            <Toaster position="bottom-right" theme="dark" />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
